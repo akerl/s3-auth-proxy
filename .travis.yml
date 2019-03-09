@@ -1,0 +1,24 @@
+sudo: required
+dist: trusty
+services:
+- docker
+env:
+  global:
+  - PATH=$HOME/.local/bin:$PATH
+  - PKGFORGE_STATEFILE=/tmp/pkgforge
+  - BUCKET=akerl-s3-auth-proxy
+  - secure: 1FndieTJ9eOHcoqpIk4Dl+69z0kM52xA0aGdTq5/vmSAT12FfrbaqP4OEiSYBDhNmq9xAJNlVgz6i5MuT4fcPpDLKkGRIcZepS9hBR7/bMjnh2rajESDunQp/Nv9WmLzLs3vuKNmb+l6kTV6pxS96uZGjTkfggmSAFMIjmdR/AdhMlMrWuDB4XQFVR8EeSpGjJ6a+l2nrkzKGrmPMPKrG0zYNh/lz+GYJtgDO1XR/e40tDfH32P6z7byXcbYV0HO5rR1Em51QJ8DeMJQDfkdZDROI0wzJuzSRi5sMEqMLU5mqJ0V8GC+5EFUjvXAZ6jYbH3LCsplTc/wQGdGLTV0/A9OQy0MQsun1fDey9Vs/CnuSxrZrmAkzhI/ddi/9jCO0YXPLBGPsFzfoh6xuH5cqk/oPq1rCzenveZJ9vA793arMsekzhXdD4fIHQyEm7Lk5/8FLa7QsvrpbMomWAYXzKIFDHm6m9y6EJ7Y8S70rqxHEuYHhfcSBxralH/j6kMNKNYNY/LyxoNKYBcnIM/cA2Lm/tAMBcpWOcU2DXrPocZXaUN3OwNJGMxn1dd6hqIrsi6vcb7Tw5GjQA3s/c1C2FIzsZBkJs/UEFn0D9yPPAhzetBIWuOGlQxRAli/Hi3g6UwhHdi/2DfW6G4AOhNZQDNYXFGunva8FdWyRQXMHlU=
+before_install:
+- pip install --user awscli
+script: make
+deploy:
+  provider: script
+  script: make release && aws s3 cp pkg/payload.zip "s3://$BUCKET/lambdas/payload-$TRAVIS_TAG.zip"
+    || travis_terminate 1
+  skip_cleanup: true
+  on:
+    tags: true
+notifications:
+  email: false
+  slack:
+    secure: WYODL/nsmTH8CZuxUVEAS9IDSYko+Biy4epV9gjxMZOJHJp03LJWJ9TIBqyfxmo1D/EtGy5QOw0S996NB51qkhvrszeBnA2lObhb2EWkVtv5To3LYTd9pt0by3tVbiA180k8LV6hNlWpqTLc/OOVH/8ts28SyubeTNzbRjXRzuKvR9f0QLamsNoQSwASgqUwNvH4Jck+MRpRvJX5IWCxBVhe6+P/ah72t1wVXO4sbDl+JhMvg8rzQaphwbbD5a3sTttIKo9AtvPnQDVjjgcKVHfkPCzasJ+9adFycML2Y1tTb+5+UW6n2/eXzU2VXrZ+04P8HBuQZFRrX/3d8q/+WaTHG4zVYSrsw93uF2BlTdKk+1oigdkeYfk+bBFS8rYCd+Tuzb5nQi0cqKbICDznoQ4xVAg6CwJa0NOSrijsTXcj6tooZh2YOytNl0AUI5OfcVJLesV66j1XH1qOgc8xQwfhkIs6OJhcBNSbmF/w1qq82mSUQB/HURNlzTJyOdHS9oeZVNhcjxLR/i0AZPdCJPugQmP1IgDIdGpBXIgbcukeK1NbhLw5aVpiVsX6WEfZVuJe7dhBYWZHR5c1QZZHMOTW76F81ypWsniWHtsdYrm/G9j4qd1UncXfcmGSJL/hX01jTUx92lv2HI3+dxNbCBmqSHE9gGbWNOrlSObECJ8=

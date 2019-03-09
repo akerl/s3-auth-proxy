@@ -1,0 +1,3 @@
+PACKAGE = s3-auth-proxy
+NAMESPACE = github.com/akerl
+OSLIST = linux
