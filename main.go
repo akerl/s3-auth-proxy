@@ -23,6 +23,7 @@ func parseS3Params(req events.Request) (string, string, error) {
 	if bucket == "" || path == "" {
 		return "", "", fmt.Errorf("settings not provided")
 	}
+	fmt.Printf("Parsed bucket and path: %s/%s", bucket, path)
 	return bucket, path, nil
 }
 
@@ -39,6 +40,7 @@ func fullACLCheck(aclName string, sess session.Session) bool {
 }
 
 func aclCheck(aclName string, sess session.Session) (bool, bool) {
+	fmt.Printf("Checking ACLs: %s", aclName)
 	acl, ok := config.ACLs[aclName]
 	if !ok {
 		return false, false
