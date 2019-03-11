@@ -23,24 +23,26 @@ func parseS3Params(req events.Request) (string, string, error) {
 	if bucket == "" || path == "" {
 		return "", "", fmt.Errorf("settings not provided")
 	}
-	fmt.Printf("Parsed bucket and path: %s/%s", bucket, path)
+	fmt.Printf("Parsed bucket and path: %s/%s\n", bucket, path)
 	return bucket, path, nil
 }
 
 func fullACLCheck(aclName string, sess session.Session) bool {
-	parts := strings.Count(aclName, "/") + 1
-	for i := parts; i > 0; i-- {
-		chunk := strings.SplitN(aclName, "/", i)[0]
+	parts := strings.Split(aclName, "/")
+
+	for i := len(parts); i > 0; i-- {
+		chunk := strings.Join(parts[:i], "/")
 		if allowed, found := aclCheck(chunk, sess); found {
 			return allowed
 		}
 	}
+
 	allowed, _ := aclCheck("default", sess)
 	return allowed
 }
 
 func aclCheck(aclName string, sess session.Session) (bool, bool) {
-	fmt.Printf("Checking ACLs: %s", aclName)
+	fmt.Printf("Checking ACLs: %s\n", aclName)
 	acl, ok := config.ACLs[aclName]
 	if !ok {
 		return false, false
