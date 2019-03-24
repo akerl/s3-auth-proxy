@@ -2,10 +2,10 @@ package main
 
 import (
 	"fmt"
-	"net/url"
 	"strings"
 	"time"
 
+	"github.com/akerl/github-auth-lambda/auth"
 	"github.com/akerl/github-auth-lambda/session"
 	"github.com/akerl/go-lambda/apigw/events"
 	"github.com/akerl/go-lambda/mux"
@@ -68,41 +68,17 @@ func aclCheck(aclName string, sess session.Session) (bool, bool) {
 	return false, true
 }
 
-func authFunc(req events.Request) (events.Response, error) {
+func aclFunc(req events.Request, sess session.Session) (bool, error) {
 	bucket, path, err := parseS3Params(req)
 	if err != nil {
-		return events.Fail("failed to authenticate request")
-	}
-
-	sess, err := sm.Read(req)
-	if err != nil {
-		return events.Fail("failed to authenticate request")
-	}
-
-	if sess.Login == "" {
-		authURL, err := url.Parse(config.AuthURL)
-		if err != nil {
-			return events.Response{}, err
-		}
-
-		returnURL := url.URL{
-			Host:   req.Headers["Host"],
-			Path:   req.Path,
-			Scheme: "https",
-		}
-		returnValues := authURL.Query()
-		returnValues.Set("redirect", returnURL.String())
-		authURL.RawQuery = returnValues.Encode()
-
-		return events.Redirect(authURL.String(), 303)
+		return false, err
 	}
 
 	fullACLPath := fmt.Sprintf("%s/%s", bucket, path)
 	if fullACLCheck(fullACLPath, sess) {
-		return events.Response{}, nil
+		return true, nil
 	}
-
-	return events.Reject("Not authorized")
+	return false, nil
 }
 
 func loadFile(req events.Request) (events.Response, error) {
@@ -142,10 +118,16 @@ func main() {
 		Domain:   config.Domain,
 	}
 
+	githubAuth := auth.SessionCheck{
+		SessionManager: *sm,
+		AuthURL:        config.AuthURL,
+		ACLHandler:     aclFunc,
+	}
+
 	d := mux.NewDispatcher(
 		&mux.SimpleReceiver{
 			HandleFunc: loadFile,
-			AuthFunc:   authFunc,
+			AuthFunc:   githubAuth.AuthFunc,
 		},
 	)
 	mux.Start(d)
