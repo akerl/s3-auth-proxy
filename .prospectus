@@ -1,9 +1,0 @@
-Prospectus.extra_dep('file', 'prospectus_travis')
-Prospectus.extra_dep('file', 'prospectus_golang')
-
-item do
-  noop
-
-  extend ProspectusTravis::Build.new('akerl/s3-auth-proxy')
-  extend ProspectusGolang::Deps.new
-end
