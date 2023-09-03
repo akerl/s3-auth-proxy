@@ -1,6 +1,7 @@
 package main
 
 import (
+	"context"
 	"fmt"
 	"strings"
 	"time"
@@ -92,15 +93,18 @@ func loadFile(req events.Request) (events.Response, error) {
 		return events.Fail("Failed to load S3 connection")
 	}
 
-	objReq := client.GetObjectRequest(&s3Api.GetObjectInput{
+	pc := s3Api.NewPresignClient(client)
+
+	objReq, err := pc.PresignGetObject(context.TODO(), &s3Api.GetObjectInput{
 		Bucket: &bucket,
 		Key:    &path,
+	}, func(opts *s3Api.PresignOptions) {
+		opts.Expires = time.Duration(1 * time.Minute)
 	})
-	url, err := objReq.Presign(1 * time.Minute)
 	if err != nil {
 		return events.Fail("Failed to load signed url")
 	}
-	return events.Redirect(url, 303)
+	return events.Redirect(objReq.URL, 303)
 }
 
 func main() {
